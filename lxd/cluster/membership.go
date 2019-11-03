@@ -82,6 +82,8 @@ func Bootstrap(state *state.State, gateway *Gateway, name string) error {
 		}
 
 		// Update our role list.
+		fmt.Println("Testing that I am running from edited source.\n")
+
 		err = tx.NodeAddRole(1, db.ClusterRoleDatabase)
 		if err != nil {
 			return errors.Wrapf(err, "Failed to add database role for the node")
