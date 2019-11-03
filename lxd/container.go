@@ -333,6 +333,7 @@ func containerCreateFromBackup(s *state.State, info backup.Info, data io.ReadSee
 		if err != nil {
 			return nil, err
 		}
+		defer tempfile.Close()
 		defer os.Remove(tempfile.Name())
 
 		// Write the compressed data
@@ -341,7 +342,6 @@ func containerCreateFromBackup(s *state.State, info backup.Info, data io.ReadSee
 			return nil, err
 		}
 
-		tempfile.Close()
 		// Prepare to pass the temporary file as program argument
 		decomArgs := append(decomArgs, tempfile.Name())
 
@@ -350,7 +350,9 @@ func containerCreateFromBackup(s *state.State, info backup.Info, data io.ReadSee
 		if err != nil {
 			return nil, err
 		}
+		defer tarData.Close()
 		defer os.Remove(tarData.Name())
+
 		// Decompress to tarData temporary file
 		err = shared.RunCommandWithFds(nil, tarData,
 			decomArgs[0], decomArgs[1:]...)
