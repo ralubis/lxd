@@ -25,9 +25,9 @@ type cmdCluster struct {
 func (c *cmdCluster) Command() *cobra.Command {
 	cmd := &cobra.Command{}
 	cmd.Use = i18n.G("cluster")
-	cmd.Short = i18n.G("Manage cluster members")
+	cmd.Short = i18n.G("Manage cluster members, please.")
 	cmd.Long = cli.FormatSection(i18n.G("Description"), i18n.G(
-		`Manage cluster members`))
+		`Manage cluster members, please.`))
 
 	// List
 	clusterListCmd := cmdClusterList{global: c.global, cluster: c}
