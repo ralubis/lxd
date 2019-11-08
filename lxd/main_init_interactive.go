@@ -99,7 +99,7 @@ func (c *cmdInit) RunInteractive(cmd *cobra.Command, args []string, d lxd.Instan
 }
 
 func (c *cmdInit) askClustering(config *cmdInitData, d lxd.InstanceServer) error {
-	if cli.AskBool("Would you like to use LXD clustering? (yes/no) [default=no]: ", "no") {
+	if cli.AskBool("Would you like to use LXD clustering? TEST (yes/no) [default=no]: ", "no") {
 		config.Cluster = &initDataCluster{}
 		config.Cluster.Enabled = true
 

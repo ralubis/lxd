@@ -201,7 +201,7 @@ func Accept(state *state.State, gateway *Gateway, name, address string, schema, 
 		return nil, errors.Wrap(err, "Failed to get raft nodes from the log")
 	}
 
-	if len(nodes) < membershipMaxRaftNodes {
+	if len(nodes) != 1 && len(nodes) < membershipMaxRaftNodes {
 		err = state.Node.Transaction(func(tx *db.NodeTx) error {
 			id, err := tx.RaftNodeAdd(address)
 			if err != nil {
