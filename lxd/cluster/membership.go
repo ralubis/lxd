@@ -662,6 +662,10 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 	err = state.Cluster.ExitExclusive(func(tx *db.ClusterTx) error {
 		logger.Info("Getting node list.")
 		nodeInfo, err := tx.Nodes()
+		if err != nil {
+			logger.Errorf("Failed to get node list: %v", err)
+			return errors.Wrapf(err, "Failed to get node list")
+		}
 		logger.Info("Got node list: %+v", nodeInfo)
 
 		logger.Info("Adding database role to this node")
