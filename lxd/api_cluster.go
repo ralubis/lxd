@@ -608,6 +608,12 @@ func clusterPutJoin(d *Daemon, req api.ClusterPut) response.Response {
 		// Add the cluster flag from the agent
 		version.UserAgentFeatures([]string{"cluster"})
 
+		logger.Infof("Making cluster rebalance call.")
+		err = clusterRebalance(client)
+		if err != nil {
+			logger.Errorf("Failed cluster rebalance call: %v", err)
+		}
+
 		return nil
 	}
 
@@ -818,6 +824,14 @@ func clusterAcceptMember(
 	}
 
 	return info, nil
+}
+
+func clusterRebalance(client lxd.InstanceServer) error {
+	_, _, err := client.RawQuery("POST",  "/internal/cluster/rebalance", nil, "")
+	if err != nil {
+		return errors.Wrap(err, "Failed cluster rebalance request")
+	}
+	return nil
 }
 
 func clusterNodesGet(d *Daemon, r *http.Request) response.Response {
@@ -1075,7 +1089,7 @@ func internalClusterPostRebalance(d *Daemon, r *http.Request) response.Response 
 		return response.InternalError(err)
 	}
 	if localAddress != leader {
-		logger.Debugf("Redirect cluster rebalance request to %s", leader)
+		logger.Infof("Redirect cluster rebalance request to %s", leader)
 		url := &url.URL{
 			Scheme: "https",
 			Path:   "/internal/cluster/rebalance",
@@ -1084,7 +1098,7 @@ func internalClusterPostRebalance(d *Daemon, r *http.Request) response.Response 
 		return response.SyncResponseRedirect(url.String())
 	}
 
-	logger.Debugf("Rebalance cluster")
+	logger.Infof("Handling rebalance cluster request")
 
 	// Check if we have a spare node to promote.
 	address, nodes, err := cluster.Rebalance(d.State(), d.gateway)
@@ -1094,6 +1108,7 @@ func internalClusterPostRebalance(d *Daemon, r *http.Request) response.Response 
 
 	if address == "" {
 		// If no node could be found to promote, notify all nodes about current set of DB nodes
+		logger.Infof("No address found to promote")
 		var offlineThreshold time.Duration
 		err := d.cluster.Transaction(func(tx *db.ClusterTx) error {
 			var err error
@@ -1128,6 +1143,8 @@ func internalClusterPostRebalance(d *Daemon, r *http.Request) response.Response 
 		return response.SyncResponse(true, nil)
 	}
 
+	logger.Infof("Promoting address %s. New raft node list: %v", address, nodes)
+
 	// Tell the node to promote itself.
 	post := &internalClusterPostPromoteRequest{}
 	for _, node := range nodes {
@@ -1144,14 +1161,18 @@ func internalClusterPostRebalance(d *Daemon, r *http.Request) response.Response 
 	}
 	_, _, err = client.RawQuery("POST", "/internal/cluster/promote", post, "")
 	if err != nil {
+		logger.Errorf("Promote request failed: %v", err)
 		return response.SmartError(err)
 	}
 
+	logger.Infof("Promote request succeeded")
 	return response.SyncResponse(true, nil)
 }
 
 // Used to promote the local non-database node to be a database one.
 func internalClusterPostPromote(d *Daemon, r *http.Request) response.Response {
+	logger.Infof("Handling promote request")
+
 	req := internalClusterPostPromoteRequest{}
 
 	// Parse the request
@@ -1162,6 +1183,7 @@ func internalClusterPostPromote(d *Daemon, r *http.Request) response.Response {
 
 	// Sanity checks
 	if len(req.RaftNodes) == 0 {
+		logger.Errorf("No raft nodes provided")
 		return response.BadRequest(fmt.Errorf("No raft members provided"))
 	}
 

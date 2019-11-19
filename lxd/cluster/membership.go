@@ -486,6 +486,7 @@ func Rebalance(state *state.State, gateway *Gateway) (string, []db.RaftNode, err
 	if err != nil {
 		return "", nil, errors.Wrap(err, "failed to get current raft nodes")
 	}
+	logger.Infof("List of current raft nodes: %v", currentRaftNodes)
 	if len(currentRaftNodes) >= membershipMaxRaftNodes {
 		// We're already at full capacity.
 		return "", nil, nil
@@ -510,12 +511,14 @@ func Rebalance(state *state.State, gateway *Gateway) (string, []db.RaftNode, err
 		// Find a node that is not part of the raft cluster yet.
 		for _, node := range nodes {
 			if shared.StringInSlice(node.Address, currentRaftAddresses) {
+				logger.Infof("node %s (%s) is already a database node", node.Name, node.Address)
 				continue // This is already a database node
 			}
 			if node.IsOffline(config.OfflineThreshold()) {
+				logger.Infof("node %s (%s) is offline", node.Name, node.Address)
 				continue // This node is offline
 			}
-			logger.Debugf(
+			logger.Infof(
 				"Found spare node %s (%s) to be promoted as database node", node.Name, node.Address)
 			address = node.Address
 			break
@@ -535,6 +538,7 @@ func Rebalance(state *state.State, gateway *Gateway) (string, []db.RaftNode, err
 	// Figure out the next ID in the raft_nodes table
 	var updatedRaftNodes []db.RaftNode
 	err = gateway.db.Transaction(func(tx *db.NodeTx) error {
+		logger.Infof("Calling raft node add.")
 		id, err := tx.RaftNodeAdd(address)
 		if err != nil {
 			return errors.Wrap(err, "Failed to add new raft node")
@@ -553,7 +557,7 @@ func Rebalance(state *state.State, gateway *Gateway) (string, []db.RaftNode, err
 // Promote makes a LXD node which is not a database node, become part of the
 // raft cluster.
 func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
-	logger.Info("Promote node to database node")
+	logger.Info("Promote this node to database node")
 
 	// Sanity check that this is not already a database node
 	if gateway.IsDatabaseNode() {
@@ -601,6 +605,7 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 	// includes ourselves). This will make the gateway start a raft node
 	// when restarted.
 	err = state.Node.Transaction(func(tx *db.NodeTx) error {
+		logger.Infof("Replacing raft node list")
 		err = tx.RaftNodesReplace(nodes)
 		if err != nil {
 			return errors.Wrap(err, "failed to set raft nodes")
@@ -646,6 +651,7 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 		return errors.Wrap(err, "Failed to connect to cluster leader")
 	}
 	defer client.Close()
+	logger.Info("Found leader successfully. Adding gateway info.")
 
 	err = client.Add(ctx, gateway.raft.info)
 	if err != nil {
@@ -654,8 +660,10 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 
 	// Unlock regular access to our cluster database and add the database role.
 	err = state.Cluster.ExitExclusive(func(tx *db.ClusterTx) error {
+		logger.Info("Adding database role to this node")
 		err = tx.NodeAddRole(id, db.ClusterRoleDatabase)
 		if err != nil {
+			logger.Errorf("Failed to add database role: %v", err)
 			return errors.Wrapf(err, "Failed to add database role for the node")
 		}
 		return err
