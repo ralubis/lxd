@@ -487,8 +487,8 @@ func Rebalance(state *state.State, gateway *Gateway) (string, []db.RaftNode, err
 		return "", nil, errors.Wrap(err, "failed to get current raft nodes")
 	}
 	logger.Infof("List of current raft nodes: %v", currentRaftNodes)
-	if len(currentRaftNodes) >= membershipMaxRaftNodes {
-		// We're already at full capacity.
+	if len(currentRaftNodes) >= membershipMaxRaftNodes || len(currentRaftNodes) == 1 {
+		// We're already at full capacity or would have a two-member cluster.
 		return "", nil, nil
 	}
 
