@@ -661,7 +661,7 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 	// Unlock regular access to our cluster database and add the database role.
 	err = state.Cluster.ExitExclusive(func(tx *db.ClusterTx) error {
 		logger.Info("Getting node list.")
-		nodeInfo, err := tx.nodes(false, "")
+		nodeInfo, err := tx.Nodes()
 		logger.Info("Got node list: %+v", nodeInfo)
 
 		logger.Info("Adding database role to this node")
