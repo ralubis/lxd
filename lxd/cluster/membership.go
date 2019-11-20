@@ -666,7 +666,7 @@ func Promote(state *state.State, gateway *Gateway, nodes []db.RaftNode) error {
 			logger.Errorf("Failed to get node list: %v", err)
 			return errors.Wrapf(err, "Failed to get node list")
 		}
-		logger.Info("Got node list: %+v", nodeInfo)
+		logger.Info("Test %d. Got node list: %+v", 0, nodeInfo)
 
 		logger.Info("Adding database role to this node")
 		err = tx.NodeAddRole(id, db.ClusterRoleDatabase)
