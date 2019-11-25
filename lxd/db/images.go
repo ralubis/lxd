@@ -476,6 +476,22 @@ func (c *Cluster) imageFill(id int, image *api.Image, create, expire, used, uplo
 
 	image.Aliases = aliases
 
+	// Get the profiles
+	q = "SELECT name FROM profiles WHERE id IN (SELECT profile_id FROM images_profiles WHERE image_id=?)"
+	inargs = []interface{}{id}
+	outfmt = []interface{}{name}
+	results, err = queryScan(c.db, q, inargs, outfmt)
+	if err != nil {
+		return err
+	}
+
+	profiles := []string
+	for _, name := range results {
+		profiles = append(profiles, name)
+	}
+
+	image.Profiles = profiles
+	
 	_, source, err := c.ImageSourceGet(id)
 	if err == nil {
 		image.UpdateSource = &source
