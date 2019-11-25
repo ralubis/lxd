@@ -53,7 +53,7 @@ var updates = map[int]schema.Update{
 	16: updateFromV15,
 	17: updateFromV16,
 	18: updateFromV17,
-	19: updateFromV18
+	19: updateFromV18,
 }
 
 // Add images_profiles table
