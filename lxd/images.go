@@ -1597,7 +1597,7 @@ func imagePut(d *Daemon, r *http.Request) response.Response {
 		info.ExpiresAt = req.ExpiresAt
 	}
 
-	err = d.cluster.ImageUpdate(id, info.Filename, info.Size, req.Public, req.AutoUpdate, info.Architecture, info.CreatedAt, info.ExpiresAt, req.Properties)
+	err = d.cluster.ImageUpdate(id, info.Filename, info.Size, req.Public, req.AutoUpdate, info.Architecture, info.CreatedAt, info.ExpiresAt, req.Properties, req.Profiles)
 	if err != nil {
 		return response.SmartError(err)
 	}
