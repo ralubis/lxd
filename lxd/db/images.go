@@ -485,8 +485,9 @@ func (c *Cluster) imageFill(id int, image *api.Image, create, expire, used, uplo
 		return err
 	}
 
-	profiles := []string
-	for _, name := range results {
+	profiles := make([]string, 0)
+	for _, r := range results {
+		name = r[0].(string)
 		profiles = append(profiles, name)
 	}
 
