@@ -1597,7 +1597,20 @@ func imagePut(d *Daemon, r *http.Request) response.Response {
 		info.ExpiresAt = req.ExpiresAt
 	}
 
-	err = d.cluster.ImageUpdate(id, info.Filename, info.Size, req.Public, req.AutoUpdate, info.Architecture, info.CreatedAt, info.ExpiresAt, req.Properties, req.Profiles)
+	// Get profile ids
+	profileIds := make([]int64, len(req.Profiles))
+	for _, profile := range req.Profiles {
+		profileId, _, err := d.cluster.ProfileGet(project, profile)
+		if err != nil {
+			if errors.Is(err, db.ErrNoSuchObject) {
+				return response.BadRequest(fmt.Errorf("Profile '%s' doesn't exist", profile))
+			}
+			return response.SmartError(err)
+		}
+		profileIds = append(profileIds, profileId)
+	}
+
+	err = d.cluster.ImageUpdate(id, info.Filename, info.Size, req.Public, req.AutoUpdate, info.Architecture, info.CreatedAt, info.ExpiresAt, req.Properties, profileIds)
 	if err != nil {
 		return response.SmartError(err)
 	}

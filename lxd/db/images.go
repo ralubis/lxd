@@ -754,7 +754,7 @@ func (c *Cluster) ImageLastAccessInit(fingerprint string) error {
 }
 
 // ImageUpdate updates the image with the given ID.
-func (c *Cluster) ImageUpdate(id int, fname string, sz int64, public bool, autoUpdate bool, architecture string, createdAt time.Time, expiresAt time.Time, properties map[string]string, profiles []string) error {
+func (c *Cluster) ImageUpdate(id int, fname string, sz int64, public bool, autoUpdate bool, architecture string, createdAt time.Time, expiresAt time.Time, properties map[string]string, profileIds []int64) error {
 	arch, err := osarch.ArchitectureId(architecture)
 	if err != nil {
 		arch = 0
@@ -800,14 +800,14 @@ func (c *Cluster) ImageUpdate(id int, fname string, sz int64, public bool, autoU
 			}
 		}
 
-		stmt3, err := tx.tx.Prepare(`INSERT INTO images_profiles (image_id, profile_id) SELECT ?, id FROM profiles WHERE name=?`)
+		stmt3, err := tx.tx.Prepare(`INSERT INTO images_profiles (image_id, profile_id) VALUES (?, ?)`)
 		if err != nil {
 			return err
 		}
 		defer stmt3.Close()
 
-		for _, profile := range profiles {
-			_, err = stmt3.Exec(id, profile)
+		for _, profileId := range profileIds {
+			_, err = stmt3.Exec(id, profileId)
 			if err != nil {
 				return err
 			}
