@@ -62,10 +62,8 @@ func updateFromV18(tx *sql.Tx) error {
 CREATE TABLE images_profiles (
 	image_id INTEGER NOT NULL,
 	profile_id INTEGER NOT NULL,
-	project_id INTEGER NOT NULL,
 	FOREIGN KEY (image_id) REFERENCES images (id) ON DELETE CASCADE,
-	FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE,
-	FOREIGN KEY (project_id) REFERENCES projects (id) ON DELETE CASCADE
+	FOREIGN KEY (profile_id) REFERENCES profiles (id) ON DELETE CASCADE
 );
 `
 	_, err := tx.Exec(stmts)
